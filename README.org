@@ -1,0 +1,18 @@
+* Cemacs
+A multithreaded, Emacs using compiled Common Lisp as a configration language
+
+** Features/Limitations
+- Common lisp configuration language
+- Most programming modes and very basic org-mode
+- Git support with libgit2
+- SSH editing
+- No dependencies, C POSIX libraries
+
+- Potentially 
+
+** Differences from GNU/Emacs
+- My Common lisp is compiled, not interpreted (idk how to make an interpreter) (it's kind of like the suckless editor)
+- Only tested on FreeBSD, but others should work
+- Terminal only
+- It's basically just a rewrite of my GNU/Emacs config, but every thing is built in
+- That's it ig
