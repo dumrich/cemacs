@@ -1,0 +1,139 @@
+* Table of Contents :TOC:
+- [[#cemacs][Cemacs]]
+  - [[#features-not-in-v001][Features not in v0.0.1]]
+  - [[#editor][Editor]]
+  - [[#buffer][Buffer]]
+  - [[#window][Window]]
+  - [[#key][Key]]
+  - [[#modes][Modes]]
+  - [[#m-x][M-x]]
+  - [[#statusline][Statusline]]
+  - [[#extensions][Extensions]]
+
+* Cemacs 
+This is a guide to configuring the Cemacs editor
+
+** Features not in v0.0.1
+- Displaying more than 2 buffers at a time
+- Clisp
+- GTK4 backend
+
+** Editor
+=src/editor.c= and =src/editor.h=
+
+The ~Editor~ object is created from the command line arguments in =main.c=.
+
+It has 4 main parts to it:
+
+- A pointer to a ~Window~ - As of now abstracts upon ncurses (soon GTK4).
+- A list of ~Buffer~ s - A dynamically allocated array of ~Buffer~ objects. Also the current buffer index.
+- A hash map of ~Key~ objects - Global keymaps, applicable throughout the editor (Such as ~M-x~). Buffer keymaps take precedence, however.
+- A theme enum - The editor theme
+
+- Finally various configuration bits (more in file) - like graphics backend, etc
+
+The ~editor_init~ function takes a FILE* ptr and an enum of the backend graphics library, returning a pointer to an editor.
+The ~editor_start~ function takes a pointer to an editor, renders it, and starts listening for keys (in a new thread). Functions are executed in main thread.
+The ~editor_render~ function takes a pointer to an editor, and displays the currently selected buffer. It will only show buffers with the shown bit toggled. More often than not, the buffer is rerendered, not the editor.
+The ~editor_switch_buffer~ function simply changes the ~buf_index~ and rerenders.
+The ~editor_add_to_keymap~ function wraps around ~keymap_push~, and adds global keys to the keymap
+
+** Buffer
+The buffer is the most important structure in Cemacs. It represents a text stream with associated modes.
+
+Buffer:
+- Any Open File
+- A dashboard
+- Dired
+
+Not a Buffer:
+- Statusline
+- M-x
+- Term
+
+A buffer can have a single major mode, with some minor modes attached. In Cemacs, a minor mode is some function that runs on a mode hook.
+
+A mode has a keymap associated; A buffer does not.
+
+It has 6 main parts to it:
+A ~char*~ buffer name - The name of the file if it exists, or buffer (like =*Dashboard*=)
+A ~FILE*~ if a file, else ~NULL~
+A rope data structure - representing the text of the file, or ~NULL~
+Two ~unsigned int~ - Representing curr position in file
+~size_t~ - Representing line count
+
+Major ~Mode*~ - The major mode of the buffer
+Minor ~Mode**~ s - Array of minor modes for the buffer
+
+Various configuration bits (more in file) - Like cursor shown, is file, writable, modified, remote directory, Buffer is active (Cursor on buffer), Buffer is shown (Buffer rendered ), Can insert, etc
+
+** Window
+A window is simply an abstracted struct over a rendering backend, for now ncurses (soon gtk4).
+
+A new window must implement all of the window methods.
+
+A window has the following properties:
+A bit field - Represents the type of backend, ~ncurses~ (soon ~GTK4~)
+Display Window object - Union of ncurses window or gtk_window
+Window thread - Window shit happens on another thread, so this is where that is stored
+
+The ~window_init_scr()~ method to initialize a screen
+The ~window_refresh()~ method to refresh the screen
+The ~window_destroy()~ method to kill the display
+
+The ~window_render_statusline()~ method to render the statusline
+The ~window_render_editor()~ renders the entire editor (with global theme)
+The ~window_render_buffer()~ Rerenders the buffer (pretty much just changes the cursor and scrolls)
+The ~window_render_popup_buffer()~ Renders the popup, takes a pointer to a buffer as an argument
+The ~window_listen_for_input()~ method listens for the next input. This is meant to be kind of like a while-switch-case statement ig
+
+Additional Methods (not required):
+The ~window_render_popup_over_list()~ method to render a popup over some list; Including M-x, Project grep, Project Find, Search in File, etc. Returns an index
+The ~window_render_term()~ method to render a terminal
+
+More methods can be found in the ~term/~ and ~gui/~ directories for specific renderings.
+
+
+** Key
+A ~Key~ is actually a key combination. They are added to a keymap, which is just a hashed map of key combinations in a mode
+
+*** Key
+A key has 1 main property:
+Key String - "b", "C-s", "M-x"
+
+When added to a keymap, the key will typically be hashed and minimized (C-B will switch to C-S-b).
+
+*** Keymap
+A hashmap associated with some major mode. Contains hashed versions of keys
+
+** Modes
+Major modes can inherit keymaps from other modes. For example, Rust mode inherits keymaps from Programming mode, which inherits from Text Mode.
+
+All modes are attached to buffers, major and minor
+
+In Cemacs, modes have different hooks:
+- On editor start hook
+- On new word hook
+- On new character hook
+- On new line hook
+- On kill hook
+
+When editing a file, a major mode is usually associated with the editing dynamics of a file. When a buffer loads, it will typically disolve the different modes into hook functions and keymaps.
+
+** M-x
+M-x is simply an iterator over function pointers which are all of the C functions. Usually, Cemacs functions take a pointer to an editor.
+
+*** Cemacs functions
+A cemacs function is a struct that simply takes a function pointer and an description
+
+** Statusline
+A statusline is just that. A statusline. Not a buffer, or anything, just a statusline.
+
+** Extensions
+*** Projects
+*** Magit
+*** Dired
+*** Term
+*** Tramp
+*** Org mode
+*** Create your own extensions
