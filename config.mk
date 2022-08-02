@@ -4,4 +4,4 @@ INSTALL = /usr/local
 BIN = cemacs
 
 CC = clang
-CFLAGS = -std=c99 -g -O2 -Wall -Wextra -I./src -lncurses
+CFLAGS = -std=c17 -g -O2 -Wall -Wextra -I./src -lncurses

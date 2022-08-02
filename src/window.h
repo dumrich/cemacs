@@ -1,30 +1,27 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "buffer.h"
 #include <ncurses.h>
-#include "statusline.h"
-#include "keys.h"
 
 enum Backend {
-    CURSES,
+    TERM,
     GTK4
 };
 
 struct Window {
-    unsigned int gui : 1;
+    enum Backend backend;
     union {
         WINDOW* win;
-    }
+    };
 };
 
-Window* window_init_scr();
-void window_destroy(Window*);
-void window_render(Window*);
+struct Window* window_init(enum Backend, int, int, int, int);
 
-void window_render_statusline(Window*, Buffer*);
-void window_render_editor(Editor*);
-void window_render_buffer(Window*, Buffer*);
-Key* window_listen_for_input(Window*);
+void window_destroy(struct Window*);
+void window_render(struct Window*);
+
+// struct Key* window_listen_for_input(struct Window*);
 
 // void window_render_popup_buffer();
 // void window_render_popup_over_list();

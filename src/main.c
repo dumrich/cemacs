@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include "editor.h"
 
+static void print_help(FILE*);
+
 int main(int argc, char** argv) {
-    unsigned char c;
+    char c;
     FILE* fp = NULL;
     bool window = false;
     
@@ -25,23 +27,26 @@ int main(int argc, char** argv) {
 
     for(int i = 1; i < argc; i++) {
         if(argv[i][0] != '-') {
-            fp = fopen(argv[i], "w+");
+            fp = fopen(argv[i], "r+");
         }
     }
     
 
-    // Init dashboard or file
-    editor_init(fp, window);
+    /* Initiailize editor modes */
+    struct Editor* e = editor_init(fp, window);
+    editor_render(e);
 
 
-    if(fp)
-        // Close file descriptor, if it exists
-        fclose(fp);
+
+
+    sleep(10);
+    editor_free(e);
+    /* End initialize editor modes */
 
     return 0;
     
 }
 
-void print_help(FILE* output) {
+static void print_help(FILE* output) {
     fprintf(output, "Usage: cemacs [options] [target]\nOptions:\n\t-h\tShow this message and exit");
 }

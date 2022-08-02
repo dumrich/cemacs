@@ -3,10 +3,12 @@
 #include <stdlib.h>
 #include "editor.h"
 #include "buffer.h"
+#include "window.h"
+#include <ncurses.h>
 
-Editor* editor_init(FILE* fp, bool win)
+struct Editor* editor_init(FILE* fp, bool win)
 {
-    struct Editor* e = malloc(sizeof(Editor));
+    struct Editor* e = malloc(sizeof(struct Editor));
 
     struct winsize term_w;
     if(!win) {
@@ -16,21 +18,51 @@ Editor* editor_init(FILE* fp, bool win)
     }
 
     // Allocate for a list of buffers and set current buffer
-    e->blist = &calloc(1, sizeof(Buffer));
+    struct Buffer* head = calloc(1, sizeof(struct Buffer));
+    e->blist = &head;
+
     e->buf_index = 0;
 
     // Set the editor theme
-    editor_set_theme(&e);
+    editor_set_theme(e);
 
     // Editor Flags
-    if(!win) {
+    if(!win)
         e->eflags |= 1 << RENDER_BACKEND;
-    }
 
-    
+    // Initialize window to NULL
+    e->window = NULL;
+
+    return e;
 }
 
-void editor_set_theme(Editor** e)
+
+void editor_render(struct Editor* e) {
+    if(e->eflags & (1 << RENDER_BACKEND)) {
+        editor_render_curses(e);
+    } 
+}
+
+static void editor_render_curses(struct Editor* e) {
+    initscr();
+
+    int height, width, start_y, start_x;
+
+    height = e->esize >> 16;
+    width = e->esize & 0xFFFF;
+
+    start_y = start_x = 0;
+
+    e->window = window_init(TERM, height, width, start_y, start_x);
+
+}
+
+void editor_free(struct Editor* e) {
+    free(*e->blist);
+    window_destroy(e->window);
+}
+
+void editor_set_theme(struct Editor* e)
 {
-    (*e)->theme = TERMINAL_DEFAULT;
+    e->theme = TERMINAL_DEFAULT;
 }
